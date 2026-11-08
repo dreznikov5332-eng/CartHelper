@@ -1,0 +1,35 @@
+name: build-zip
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: unzip and build
+        run: |
+          set -e
+          ZIP=$(ls -1 *.zip | head -n 1)
+          mkdir work
+          unzip -q "$ZIP" -d work
+          DIR=$(ls -1 work | head -n 1)
+          cd "work/$DIR"
+          chmod +x ./gradlew
+          ./gradlew build
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp build/libs/*.jar "$GITHUB_WORKSPACE/out/"
+      - name: save the mod
+        uses: actions/upload-artifact@v7
+        with:
+          name: mod-jar
+          path: out/
